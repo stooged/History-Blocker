@@ -4,41 +4,38 @@
 
 void blockHistory()
 {
-	char hfile[256]; 
-	DIR *dir = opendir("/user/home/");
-    if (dir)
+	char hfile[256], umsg[256]; 
+	SceUserServiceLoginUserIdList userIdList;
+	userIdList = getUserIDList();
+	for (int i = 0; i < SCE_USER_SERVICE_MAX_LOGIN_USERS; i ++) 
 	{
-		struct dirent *dp;
-		struct stat info;
-		while ((dp = readdir(dir)) != NULL)
+		if (userIdList.userId[i] != -1) 
 		{
-			if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
-			{}
-			else
+			if (userIdList.userId[i] != 0)
 			{
-				sprintf(hfile, "/user/home/%s/webbrowser/endhistory.txt", dp->d_name);	
+				sprintf(hfile, "/user/home/%x/webbrowser/endhistory.txt", userIdList.userId[i]);
 				if (!file_exists(hfile) && !dir_exists(hfile))
 				{
 					mkdir(hfile, 0777);
-					systemMessage("History Block: Enabled\n\nRun payload again to disable");
+					sprintf(umsg, "History Block: Enabled\nFor: %s\n\nRun payload again to disable", getUserName(userIdList.userId[i]));
+					systemMessage(umsg);
 				}
 				else
 				{
-					if (!stat(hfile, &info))
+					if (dir_exists(hfile))
 					{
-						if (S_ISDIR(info.st_mode))
-						{
-							rmdir(hfile);
-							systemMessage("History Block: Disabled\n\nRun payload again to enable");
-						}
-						else if (S_ISREG(info.st_mode))
-						{
-							unlink(hfile);
-							mkdir(hfile, 0777);
-							systemMessage("History Block: Enabled\n\nRun payload again to disable");
-						}	
+						rmdir(hfile);
+						sprintf(umsg, "History Block: Disabled\nFor: %s\n\nRun payload again to enable", getUserName(userIdList.userId[i]));
+						systemMessage(umsg);
 					}
-				}
+					else if (file_exists(hfile))
+					{
+						unlink(hfile);
+						mkdir(hfile, 0777);
+						sprintf(umsg, "History Block: Enabled\nFor: %s\n\nRun payload again to disable", getUserName(userIdList.userId[i]));
+						systemMessage(umsg);
+					}	
+				}		
 			}
 		}
 	}
